@@ -6,20 +6,33 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
 import com.denzcoskun.imageslider.ImageSlider;
 import com.denzcoskun.imageslider.models.SlideModel;
+import com.example.foody.MainActivity;
 import com.example.foody.View.view_screen_ship.screen_ship;
 import com.example.foody.View.View_screen_discover.discover_food;
 import com.example.foody.View.View_screen_order.screen_order;
 import com.example.foody.adapter.screen_home.CustomGridAdapter;
+import com.example.foody.adapter.screen_home.adapter;
 import com.example.foody.model.screen_home.Product;
 import com.example.foody.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +40,9 @@ import java.util.List;
 public class HomeFragment extends Fragment {
     RecyclerView recyclerView_listFood;
     CustomGridAdapter customGridAdapterex_;
-
-
+    List<Product> ProductList;
+    adapter proAdapter;
+    String urlGetData ="http://192.168.1.5/foody/API.php";
 
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -87,8 +101,7 @@ public class HomeFragment extends Fragment {
             }
         });
 
-
-        List<Product> ProductList = new ArrayList<>();
+        ProductList = new ArrayList<>();
         ProductList.add(new Product("Quán Phở Bình An","https://images.foody.vn/res/g92/914932/prof/s1242x600/foody-upload-api-foody-mobile-rin-191111142628.jpg","163 Hà Huy Tập, Quận Thanh Khê, Đà Nẵng","28.000 đ"));
         ProductList.add(new Product("Dana Buffet","https://images.foody.vn/res/g106/1052041/prof/s1242x600/foody-upload-api-foody-mobile-12-201026151207.jpg","56 Nguyễn Chí Thanh, Quận Hải Châu, Đà Nẵng","369.000 đ"));
         ProductList.add(new Product("My Thái Restaurant - Ẩm Thực Thái","https://images.foody.vn/res/g66/658216/prof/s1242x600/foody-mobile-myth-jpg-641-636332292467972129.jpg","389 Trần Hưng Đạo, Quận Sơn Trà, Đà Nẵng","200,000 đ"));
@@ -97,11 +110,47 @@ public class HomeFragment extends Fragment {
         StaggeredGridLayoutManager staggeredGridLayoutManager =new StaggeredGridLayoutManager(2, LinearLayout.VERTICAL);
         recyclerView_listFood.setLayoutManager(staggeredGridLayoutManager);
         customGridAdapterex_ = new CustomGridAdapter(getActivity(),ProductList);
-        recyclerView_listFood.setAdapter(customGridAdapterex_);
 
+        recyclerView_listFood.setAdapter(customGridAdapterex_);
+        recyclerView_listFood.setAdapter(customGridAdapterex_);
         return root;
     }
+    private void GetData(String url) {
 
+        RequestQueue requestQueue = Volley.newRequestQueue(null);
+        JsonArrayRequest jsonArrayRequest= new JsonArrayRequest(Request.Method.GET, url, null, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response){
+
+                for(int i=0;i<response.length();i++)
+                {
+                    try {
+                        JSONObject object = response.getJSONObject(i);
+                        ProductList.add(new Product(
+                                        object.getString("name"),
+                                        object.getString("imageUrl"),
+                                        object.getString("price"),
+                                        object.getString("address")
+                                )
+                        );
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                customGridAdapterex_.notifyDataSetChanged();
+
+            }
+        },
+                new Response.ErrorListener(){
+                    @Override
+                    public void onErrorResponse(VolleyError error){
+                        Toast.makeText(getContext(), error.toString(), Toast.LENGTH_LONG).show();
+
+                    }
+                }
+        );
+        requestQueue.add(jsonArrayRequest);
+    }
 
 
 
